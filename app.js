@@ -11,6 +11,20 @@ const mongoose = require('mongoose')
 
 const index = require('./routes/index')
 
+import passport from 'koa-passport'
+import {Strategy as LocalStrategy} from 'passport-local'
+import session from 'koa-generic-session'
+
+app.keys = ['2ervyn13W@U@UYRIOFfnjfnjecnl4wf4']
+// middlewares
+app.use(bodyparser)
+app.use(json())
+app.use(logger())
+app.use(require('koa-static')(__dirname + '/public'))
+app.use(convert(session()))
+app.use(passport.initialize())
+app.use(passport.session())
+
 // middlewares
 app.use(convert(bodyparser))
 app.use(convert(json()))
@@ -45,5 +59,23 @@ db.once('open', () => {
   console.log('connected to mongodb server')
 })
 mongoose.connect('localhost')
+
+
+passport.serializeUser((user, done) => {
+  done(null, user)
+})
+
+passport.deserializeUser((user, done) => {
+  done(null, user)
+})
+
+passport.use('local', new LocalStrategy((username, password, done) => {
+  console.log(password)
+
+  if(username === 'admin' && password === 'dk3#grjks@)#RFfkl')
+    return done(null, {})
+  else
+    return done(null, false)
+}))
 
 module.exports = app

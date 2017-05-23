@@ -2,15 +2,35 @@ import Router from 'koa-router'
 import Polls from '../DB/Polls'
 import Users from '../DB/Users'
 import Response from '../DB/Responses'
+import ensure from '../middlewares/ensure'
 
 const router = new Router({prefix: '/api'})
 
 async function getPolls (ctx, next) {
   try {
     const polls = await Polls.find().exec()
+    let newPolls
+    if(ctx.isAuthenticated())
+      newPolls = polls.map((poll, index) => {
+        return {
+          _id: poll._id,
+          title: poll.title,
+          contents: poll.contents,
+          upCount: poll.up.length,
+          downCount: poll.down.length
+        }
+      })
+    else
+      newPolls = polls.map((poll, index) => {
+        return {
+          _id: poll._id,
+          title: poll.title,
+          contents: poll.contents
+        }
+      })
     ctx.body = await {
       success: true,
-      data: polls
+      data: newPolls
     }
   } catch (error) {
     ctx.body = await {
@@ -54,6 +74,20 @@ async function getPoll(ctx, next) {
     ctx.body = await {
       success: true,
       data: data
+    }
+  } catch (error) {
+    ctx.body = await {
+      success: false,
+      error: error.message
+    }
+  }
+}
+
+async function deletePoll(ctx, next) {
+  try {
+    await Polls.remove({_id: ctx.params.id}).exec()
+    ctx.body = await {
+      success: true
     }
   } catch (error) {
     ctx.body = await {
@@ -176,11 +210,12 @@ async function addUser(ctx, next) {
 
 router
 .get('/polls', getPolls)
-.post('/polls', addPoll)
+.post('/polls', ensure, addPoll)
 .get('/polls/:id', getPoll)
 .post('/polls/:id', addVote)
-.get('/polls/:id/stats', getPollStats)
-.get('/users', getUsers)
+.del('/polls/:id', ensure, deletePoll)
+.get('/polls/:id/stats', ensure, getPollStats)
 .post('/users', addUser)
+.get('/users', ensure, getUsers)
 
 export default router
