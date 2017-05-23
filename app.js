@@ -14,6 +14,7 @@ const index = require('./routes/index')
 import passport from 'koa-passport'
 import {Strategy as LocalStrategy} from 'passport-local'
 import session from 'koa-generic-session'
+import configuration from './configuration'
 
 app.keys = ['2ervyn13W@U@UYRIOFfnjfnjecnl4wf4']
 // middlewares
@@ -72,7 +73,7 @@ passport.deserializeUser((user, done) => {
 passport.use('local', new LocalStrategy((username, password, done) => {
   console.log(password)
 
-  if(username === 'admin' && password === 'dk3#grjks@)#RFfkl')
+  if(username === configuration.adminUsername && password === configuration.adminPassword)
     return done(null, {})
   else
     return done(null, false)
