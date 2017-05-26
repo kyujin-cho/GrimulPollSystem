@@ -51,7 +51,6 @@ app.use(index.routes(), index.allowedMethods())
 
 app.on('error', function(err, ctx){
   console.log(err)
-  logger.error('server error', err, ctx)
 })
 
 const db = mongoose.connection
