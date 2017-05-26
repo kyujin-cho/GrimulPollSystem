@@ -124,13 +124,19 @@ async function addVote(ctx, next) {
     const user = await Users.findOne({name: ctx.request.body.name, userId: ctx.request.body.userId}).exec()
     if(user === null || user === undefined) 
       throw new Error('No such user')
-    let index = -1
-    user.attendedPolls.forEach(function(poll, index) {     
-      if(poll._id === ctx.params.id)
+    let i = 0
+    user.attendedPolls.forEach(function(poll, index) {
+      console.log(poll)
+      
+      console.log(index + ': ' + poll)
+      console.log(poll.toString() === ctx.params.id)
+      if(poll.toString() === ctx.params.id)
         return false
-      console.log(poll) 
+      i++
     })
-    if(index !== (user.attendedPolls.length - 1)) {
+    console.log(i + ', ' + user.attendedPolls.length)
+    
+    if(i !== (user.attendedPolls.length)) {
       throw new Error('Already voted')
     }
     const response = ctx.request.body.response

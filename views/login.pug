@@ -4,8 +4,8 @@ html
     link(rel="stylesheet", href="https://fonts.googleapis.com/icon?family=Material+Icons")
     link(rel="stylesheet", href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css")    
   body
-    .mdl-grid
-      form(action="/admin/login", method="POST")
+    form(action="/admin/login", method="POST")
+      .mdl-grid
         .mdl-textfield.mdl-js-textfield.mdl-cell.mdl-cell--5-col.mdl-cell--3-col-tablet
           input#username.mdl-textfield__input(type="text", name="username")
           label.mdl-textfield__label(for="username") ID
