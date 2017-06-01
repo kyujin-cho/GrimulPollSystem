@@ -1,6 +1,13 @@
 import React from 'react'
 import axios from 'axios'
 import Modal from 'react-modal'
+import FingerprintJS from 'fingerprintjs2'
+
+function getFPAsync() {
+  return new Promise((resolve, reject) => {
+    new FingerprintJS().get(resolve)
+  })
+}
 
 Modal.setAppElement('#container')
 class PollApp extends React.Component {
@@ -20,11 +27,13 @@ class PollApp extends React.Component {
   }
 
   async vote(response, pollId) {
+    const fp = await getFPAsync()
     const data = {
-      name: this.name.value,
-      userId: this.userId.value,
-      response: response
+      response: response,
+      fingerprint: fp
     }
+    console.log('fp:' + fp)
+    
     const voteResponse = await axios.post('/api/polls/' + pollId, data)
     const snackbarContainer = document.querySelector('#vote-toast')
     if(voteResponse.data.success)
@@ -37,21 +46,13 @@ class PollApp extends React.Component {
     return (
       <div className="PollApp">
         <div className="mdl-grid">
-          <div className="mdl-textfield mdl-js-textfield mdl-cell mdl-cell--5-col mdl-cell--3-col-tablet">
-            <input className="mdl-textfield__input" ref={name => this.name = name} type="text" id="name" />
-            <label className="mdl-textfield__label" htmlFor="name">이름</label>
-          </div>
-          <div className="mdl-cell mdl-cell--2-col mdl-cell--2-col-tablet" />
-          <div className="mdl-textfield mdl-js-textfield mdl-cell mdl-cell--5-col mdl-cell--3-col-tablet">
-            <input className="mdl-textfield__input" ref={userId => this.userId = userId} type="text" id="userId" />
-            <label className="mdl-textfield__label" htmlFor="userId">학번</label>
-          </div>
+          
         </div>
-        <PollList polls={this.state.polls} vote={this.vote.bind(this)} />
         <div id="vote-toast" className="mdl-js-snackbar mdl-snackbar">
           <div className="mdl-snackbar__text"></div>
           <button className="mdl-snackbar__action" type="button"></button>
         </div>
+        <PollList polls={this.state.polls} vote={this.vote.bind(this)} />
       </div>
     )
   }

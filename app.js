@@ -1,3 +1,10 @@
+import passport from 'koa-passport'
+import {Strategy as LocalStrategy} from 'passport-local'
+import session from 'koa-generic-session'
+import configuration from './configuration'
+import User from './DB/Users'
+import SHA256 from './include/SHA256'
+
 const Koa = require('koa')
 const app = new Koa()
 const views = require('koa-views')
@@ -11,10 +18,6 @@ const mongoose = require('mongoose')
 
 const index = require('./routes/index')
 
-import passport from 'koa-passport'
-import {Strategy as LocalStrategy} from 'passport-local'
-import session from 'koa-generic-session'
-import configuration from './configuration'
 
 app.keys = ['2ervyn13W@U@UYRIOFfnjfnjecnl4wf4']
 // middlewares
@@ -69,13 +72,19 @@ passport.deserializeUser((user, done) => {
   done(null, user)
 })
 
-passport.use('local', new LocalStrategy((username, password, done) => {
-  console.log(password)
+passport.use('local', new LocalStrategy(
+  async (username, password, done) => {
+    console.log(SHA256(password))
+    const hashed = SHA256(password)
+    const user = await User.findOne({email: username}).exec()
+    if(user === null)
+      return done(null, false)
+    if(user.password == hashed)
+      return done(null, user)
+    else
+      return done(null, false)
+  }
+))
 
-  if(username === configuration.adminUsername && password === configuration.adminPassword)
-    return done(null, {})
-  else
-    return done(null, false)
-}))
 
-module.exports = app
+export default app

@@ -3,14 +3,25 @@ import Polls from '../DB/Polls'
 import Users from '../DB/Users'
 import Response from '../DB/Responses'
 import ensure from '../middlewares/ensure'
+import admin from '../middlewares/admin'
+import nodemailer from 'nodemailer'
+import SHA256 from '../include/SHA256'
 
 const router = new Router({prefix: '/api'})
+
+const gmailTransport = nodemailer.createTransport({
+  service: 'Gmail',
+  auth: {
+    user: 'hy.grimul@gmail.com',
+    pass: 'LnF-75k-qhP-Yat'
+  }
+})
 
 async function getPolls (ctx, next) {
   try {
     const polls = await Polls.find().exec()
     let newPolls
-    if(ctx.isAuthenticated())
+    if(ctx.state.user.privilege.indexOf('administrator') !== -1)
       newPolls = polls.map((poll, index) => {
         return {
           _id: poll._id,
@@ -121,10 +132,12 @@ async function getPollStats(ctx, next) {
 
 async function addVote(ctx, next) { 
   try {
-    const user = await Users.findOne({name: ctx.request.body.name, userId: ctx.request.body.userId}).exec()
+    const user = await Users.findOne({_id: ctx.state.user._id}).exec()
     if(user === null || user === undefined) 
       throw new Error('No such user')
+    const poll = await Polls.findOne({_id: ctx.params.id}).exec()
     let i = 0
+    let j = 0
     user.attendedPolls.forEach(function(poll, index) {
       console.log(poll)
       
@@ -136,14 +149,23 @@ async function addVote(ctx, next) {
     })
     console.log(i + ', ' + user.attendedPolls.length)
     
-    if(i !== (user.attendedPolls.length)) {
-      throw new Error('Already voted')
+    poll.votedFPs.forEach(function(fp, index) {
+      console.log(fp)
+      
+      console.log(index + ': ' + fp)
+      if(fp.toString() === ctx.request.body.fingerprint)
+        return false
+      j++
+    })
+    if(i !== (user.attendedPolls.length) || j !== (poll.votedFPs.length)) {
+      throw new Error('Can\'t make two or more votes on same device')
     }
     const response = ctx.request.body.response
     const R = new Response({
       userId: user._id,
       pollId: ctx.params.id,
-      response: response
+      response: response,
+      ipAddr: ctx.request.ip
     })
     const savedResponse = await R.save()
     let pushData
@@ -151,7 +173,7 @@ async function addVote(ctx, next) {
       pushData = {'up': savedResponse._id}
     else
       pushData = {'down': savedResponse._id}
-    
+    pushData.votedFPs = ctx.request.body.fingerprint
     const updatedPoll = await Polls.findByIdAndUpdate(
       ctx.params.id,
       {$push: pushData},
@@ -187,6 +209,7 @@ async function getUsers(ctx, next) {
     }
   }
 }
+
 async function addUser(ctx, next) {
   try {
     const duplicate = await Users.findOne({userId: ctx.request.body.userId}).exec()
@@ -196,11 +219,32 @@ async function addUser(ctx, next) {
       throw new Error('이미 등록된 학생입니다')
     if(!ctx.request.body.userId || !ctx.request.body.name)
       throw new Error('올바른 데이터를 입력해 주세요.')
-    const newUser = new Users({
+    let userData = {
       name: ctx.request.body.name,
-      userId: ctx.request.body.userId
-    })
+      userId: ctx.request.body.userId,
+      email: ctx.request.body.email,
+      password: SHA256(ctx.request.body.password)
+    }
+    userData.verifyHash = SHA256(
+        Math.random() * (10 ** 8).toString() 
+        + userData.userId.slice((userData.userId.length - 1) / 2)
+        + Math.random() * (10 ** 8).toString()
+        + userData.userId.slice(0, (userData.userId.length - 1) / 2)
+    )
+    const newUser = new Users(userData)
+
     const savedUser = await newUser.save()
+    const URL = 'http://grimul.duckdns.org/api/users/' + savedUser._id + '/verify?verifyHash=' + newUser.verifyHash
+    const sentMail = await gmailTransport.sendMail({
+      from: 'Do Not Reply <hy.grimul@gmail.com>',
+      to: userData.email,
+      subject: 'Confirm your account',
+      html: '<p>Please verify your account by clicking <a href="' + URL + '">this link</a>. If you are unable to do so, copy and ' +
+      'paste the following link into your browser:</p><p>' + URL + '</p>',
+      text: 'Please verify your account by clicking the following link, or by copying and pasting it into your browser: ' + URL
+    })
+    console.log('Verification mail sent:' + sentMail.response)
+    
     ctx.body = await {
       success: true,
       data: savedUser._id
@@ -213,15 +257,51 @@ async function addUser(ctx, next) {
   }
 }
 
-
+async function verifyUser(ctx, next) {
+  try {
+    const user = await Users.findOne({_id: ctx.params.id}).exec()
+    if(user === null)
+      throw new Error('No such user')
+    if(user.verifyHash === '') 
+      throw new Error('Already Verified')
+    
+    console.log('My hash: ' + user.verifyHash)
+    console.log('Ur hash: ' + ctx.query.verifyHash)
+    
+    if(user.verifyHash !== ctx.query.verifyHash) 
+      throw new Error('Hash doesn\'t match')
+    
+    await Users.findByIdAndUpdate(ctx.params.id,{
+      verifyHash: ''
+    })
+    ctx. body = await {
+      success: true
+    }
+    const sentMail = await gmailTransport.sendMail({
+      from: 'Do Not Reply <hy.grimul@gmail.com>',
+      to: user.email,
+      subject: 'Successfully verified!',
+      html: '<p>Your account has been successfully verified.</p>',
+      text: 'Your account has been successfully verified.'
+    })
+    console.log('Confirmation mail sent: ' + sentMail.response)
+    
+  } catch(err) {
+    ctx.body = await {
+      success: false,
+      err: err.message
+    }
+  }
+}
 router
-.get('/polls', getPolls)
-.post('/polls', ensure, addPoll)
-.get('/polls/:id', getPoll)
-.post('/polls/:id', addVote)
-.del('/polls/:id', ensure, deletePoll)
-.get('/polls/:id/stats', ensure, getPollStats)
+.get('/polls', ensure, getPolls)
+.post('/polls', admin, addPoll)
+.get('/polls/:id', ensure, getPoll)
+.post('/polls/:id', ensure, addVote)
+.del('/polls/:id', admin, deletePoll)
+.get('/polls/:id/stats', admin, getPollStats)
 .post('/users', addUser)
-.get('/users', ensure, getUsers)
+.get('/users', admin, getUsers)
+.get('/users/:id/verify', verifyUser)
 
 export default router
