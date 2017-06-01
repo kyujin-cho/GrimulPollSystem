@@ -214,12 +214,15 @@ async function getUsers(ctx, next) {
 async function addUser(ctx, next) {
   try {
     const duplicate = await Users.findOne({userId: ctx.request.body.userId}).exec()
+    const duplicate2 = await Users.findOne({email: ctx.request.body.email}).exec()
     console.log(duplicate)
     
-    if(duplicate)
+    if(duplicate || duplicate2)
       throw new Error('이미 등록된 학생입니다')
     if(!ctx.request.body.userId || !ctx.request.body.name)
       throw new Error('올바른 데이터를 입력해 주세요.')
+    if(ctx.request.body.email.split('@')[1] !== 'hanyang.ac.kr')
+      throw new Error('올바른 이메일을 입력해 주세요.')
     let userData = {
       name: ctx.request.body.name,
       userId: ctx.request.body.userId,

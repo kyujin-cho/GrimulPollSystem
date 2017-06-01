@@ -41,7 +41,10 @@ class AddUserApp extends React.Component {
       email: this.state.email,
       password: this.state.userpass
     }
-
+    if(!this.state.isEmailChecked || !this.state.isPasswordChecked) {
+      snackbarContainer.MaterialSnackbar.showSnackbar({message: '이메일과 비밀번호를 정확히 입력해주세요.'})
+      return
+    }
     const response = await axios.post('/api/users', data)
     const snackbarContainer = document.querySelector('#vote-toast')
     if(response.data.success)
