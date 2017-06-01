@@ -62,6 +62,6 @@ typings/
 .env
 
 # Configuration files
-configuration.js
+configuration
 
 # End of https://www.gitignore.io/api/node
