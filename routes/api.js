@@ -6,14 +6,15 @@ import ensure from '../middlewares/ensure'
 import admin from '../middlewares/admin'
 import nodemailer from 'nodemailer'
 import SHA256 from '../include/SHA256'
+import configuration from '../configuration'
 
 const router = new Router({prefix: '/api'})
 
 const gmailTransport = nodemailer.createTransport({
   service: 'Gmail',
   auth: {
-    user: 'hy.grimul@gmail.com',
-    pass: 'LnF-75k-qhP-Yat'
+    user: configuration.gmailUsername + '@gmail.com',
+    pass: configuration.gmailPassword
   }
 })
 

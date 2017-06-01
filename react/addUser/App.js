@@ -13,6 +13,22 @@ class AddUserApp extends React.Component {
       userId: ''
     }
   }
+  componentDidMount() {
+    const aggrementString = `
+    개인정보 수집 · 이용 동의 등에 관한 약관
+
+    1. 개인정보 수집 · 이용 목적
+    중복투표/부정투표 방지의 목적으로 개인 정보를 수집 · 이용합니다.
+    2. 수집하는 개인정보
+    이름, 이메일(email), 학번, 기기 Fingerprint
+    3. 개인정보의 보유 · 이용 기간
+    수집된 개인정보는 투표 이용이 종료될 때까지 이용되며, 이용이 완료된 후 바로 폐기됩니다.
+    4. 개인정보의 처리위탁
+    이 사이트에서는 수집된 개인정보의 저장 · 서버 관리 및 유지업무를 위탁처리하지 않고 있습니다.
+    이 메세지를 확인 후 가입을 계속 진행하실 경우, 위의 약관에 동의한 것으로 간주합니다.
+    `
+    alert(aggrementString)
+  }
   onDataChange(e) {
     // e.preventDefault()
     const target = e.target
