@@ -19,7 +19,7 @@ const gmailTransport = nodemailer.createTransport({
 
 async function getPolls (ctx, next) {
   try {
-    const polls = await Polls.find().exec()
+    const polls = await Polls.find({isDeleted: false}).exec()
     let newPolls
     if(ctx.state.user.privilege.indexOf('administrator') !== -1)
       newPolls = polls.map((poll, index) => {
@@ -76,7 +76,7 @@ async function addPoll(ctx, next) {
 
 async function getPoll(ctx, next) {
   try {
-    const poll = await Polls.findOne({_id: ctx.params.id}).exec()
+    const poll = await Polls.findOne({_id: ctx.params.id, isDeleted: false}).exec()
     const data = {
       _id: poll.id,
       title: poll.title,
@@ -96,7 +96,7 @@ async function getPoll(ctx, next) {
 
 async function deletePoll(ctx, next) {
   try {
-    await Polls.remove({_id: ctx.params.id}).exec()
+    await Polls.findByIdAndUpdate(ctx.params.id, {isDeleted: true}).exec()
     ctx.body = await {
       success: true
     }
@@ -110,7 +110,7 @@ async function deletePoll(ctx, next) {
 
 async function getPollStats(ctx, next) {
   try {
-    const poll = await Polls.findOne({_id: ctx.params.id}).exec()
+    const poll = await Polls.findOne({_id: ctx.params.id, isDeleted: false}).exec()
     const data = {
       _id: poll.id,
       title: poll.title,
@@ -135,9 +135,10 @@ async function addVote(ctx, next) {
     const user = await Users.findOne({_id: ctx.state.user._id}).exec()
     if(user === null || user === undefined) 
       throw new Error('No such user')
-    const poll = await Polls.findOne({_id: ctx.params.id}).exec()
+    const poll = await Polls.findOne({_id: ctx.params.id, isDeleted: false}).exec()
     let i = 0
     let j = 0
+    if(poll === null) throw new Error('No such poll')
     user.attendedPolls.forEach(function(poll, index) {
       console.log(poll)
       

@@ -28,7 +28,7 @@ class AdminApp extends React.Component {
         <VoteList votes={this.state.votes} refreshVotes={this.refreshVotes.bind(this)} />
         <div className="mdl-grid">
           <div className="mdl-cell mdl-cell--12-col">
-            <form action="/admin/logout" method="GET" >
+            <form action="/logout" method="GET" >
               <button type="submit" className="mdl-button mdl-js-button mdl-button--raised">
                 로그아웃
               </button>

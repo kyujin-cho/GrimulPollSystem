@@ -6,7 +6,8 @@ const Poll = new Schema({
   contents: String,
   up: [mongoose.SchemaTypes.ObjectId],
   down:  [mongoose.SchemaTypes.ObjectId],
-  votedFPs: [String]
+  votedFPs: [String],
+  isDeleted: {type: Boolean, default: false}
 })
 
 export default mongoose.model('poll', Poll)

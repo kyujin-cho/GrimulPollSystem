@@ -53,6 +53,15 @@ class PollApp extends React.Component {
           <button className="mdl-snackbar__action" type="button"></button>
         </div>
         <PollList polls={this.state.polls} vote={this.vote.bind(this)} />
+        <div className="mdl-grid">
+          <div className="mdl-cell mdl-cell--12-col">
+            <form action="/logout" method="GET" >
+              <button type="submit" className="mdl-button mdl-js-button mdl-button--raised">
+                로그아웃
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     )
   }
